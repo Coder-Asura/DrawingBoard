@@ -17,8 +17,11 @@ import android.view.View.OnTouchListener;
  * 画板视图
  */
 public class DrawingBoardView extends SurfaceView implements SurfaceHolder.Callback, OnTouchListener {
-    private Paint mPaint = new Paint();
-    private Path mPath = new Path();
+    private Paint mPaint;
+    private Path mPath;
+    //上一次触摸事件的终点的x，y
+    private float mLastX;
+    private float mLastY;
 
     public DrawingBoardView(Context context) {
         this(context, null);
@@ -35,6 +38,8 @@ public class DrawingBoardView extends SurfaceView implements SurfaceHolder.Callb
 
     private void init() {
         getHolder().addCallback(this);
+        mPaint = new Paint();
+        mPath = new Path();
         mPaint.setColor(Color.BLACK);
         mPaint.setStrokeWidth(10);
         mPaint.setAntiAlias(true);
@@ -75,7 +80,7 @@ public class DrawingBoardView extends SurfaceView implements SurfaceHolder.Callb
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        switch (motionEvent.getAction()) {
+        /*switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mPath.moveTo(motionEvent.getX(), motionEvent.getY());
                 draw();
@@ -85,6 +90,34 @@ public class DrawingBoardView extends SurfaceView implements SurfaceHolder.Callb
                 draw();
                 break;
         }
-        return true;
+        return true;*/
+
+        float x = motionEvent.getX();
+        float y = motionEvent.getY();
+
+        switch (motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mPath.moveTo(x, y);
+                mLastX = x;
+                mLastY = y;
+                draw();
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                //结束点
+                float endX = (mLastX + x) / 2;
+                float endY = (mLastY + y) / 2;
+                //贝塞尔曲线让线条更顺滑
+                //上一次的终点作为起点,上一个点作为控制点,中间点作为终点
+                mPath.quadTo(mLastX, mLastY, endX, endY);
+                //记录上一次的操作点
+                mLastX = x;
+                mLastY = y;
+                draw();
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+
+        }
+        return super.onTouchEvent(motionEvent);
     }
 }
